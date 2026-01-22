@@ -80,7 +80,7 @@ Finds the most recent email matching a subject, extracts content, and downloads 
   "capability": "find_and_extract_email",
   "args": {
     "subject": "Invoice",
-    "email_account": "test@gmail.com",
+    "email_account": "test@outlook.com",
     "output_base_path": "C:/output"
   }
 }
@@ -127,7 +127,7 @@ Checks if an email has any attachments without downloading them.
   "capability": "check_email_attachments",
   "args": {
     "subject": "Invoice",
-    "email_account": "test@gmail.com"
+    "email_account": "test@outlook.com"
   }
 }
 ```
@@ -174,7 +174,7 @@ Checks if an email contains specific file patterns in its attachments.
   "capability": "check_specific_files",
   "args": {
     "subject": "Invoice",
-    "email_account": "test@gmail.com",
+    "email_account": "test@outlook.com",
     "file_patterns": ["invoice", "receipt", "contract", "statement"]
   }
 }
@@ -276,7 +276,7 @@ Here are example prompts users might use when calling this toolkit through an AI
 
 ### Example 1: Find Email with Attachments
 ```
-"Find the most recent email with subject containing 'Invoice' in my Outlook inbox (test@gmail.com) and download all attachments to C:/downloads"
+"Find the most recent email with subject containing 'Invoice' in my Outlook inbox (test@outlook.com) and download all attachments to C:/downloads"
 ```
 
 **Agent would call:**
@@ -285,7 +285,7 @@ Here are example prompts users might use when calling this toolkit through an AI
   "capability": "find_and_extract_email",
   "args": {
     "subject": "Invoice",
-    "email_account": "test@gmail.com",
+    "email_account": "test@outlook.com",
     "output_base_path": "C:/downloads"
   }
 }
@@ -302,7 +302,7 @@ Here are example prompts users might use when calling this toolkit through an AI
   "capability": "find_and_extract_email",
   "args": {
     "subject": "Report",
-    "email_account": "test@gmail.com",
+    "email_account": "test@outlook.com",
     "search_unread_only": true,
     "send_reply_if_no_attachments": true
   }
@@ -320,7 +320,7 @@ Here are example prompts users might use when calling this toolkit through an AI
   "capability": "find_and_extract_email",
   "args": {
     "subject": "Meeting Notes",
-    "email_account": "test@gmail.com"
+    "email_account": "test@outlook.com"
   }
 }
 ```
@@ -353,7 +353,7 @@ Here are example prompts users might use when calling this toolkit through an AI
   "capability": "check_email_attachments",
   "args": {
     "subject": "Invoice",
-    "email_account": "test@gmail.com"
+    "email_account": "test@outlook.com"
   }
 }
 ```
@@ -369,7 +369,7 @@ Here are example prompts users might use when calling this toolkit through an AI
   "capability": "check_specific_files",
   "args": {
     "subject": "Report",
-    "email_account": "test@gmail.com",
+    "email_account": "test@outlook.com",
     "file_patterns": ["invoice", "receipt", "contract", "statement"]
   }
 }
@@ -386,7 +386,7 @@ Here are example prompts users might use when calling this toolkit through an AI
   "capability": "find_and_extract_email",
   "args": {
     "subject": "Contract",
-    "email_account": "test@gmail.com",
+    "email_account": "test@outlook.com",
     "search_unread_only": false
   }
 }

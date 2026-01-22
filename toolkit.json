@@ -20,7 +20,7 @@
           },
           "email_account": {
             "type": "string",
-            "description": "Outlook email account ID (e.g., 'test@gmail.com')"
+            "description": "Outlook email account ID (e.g., 'test@outlook.com')"
           },
           "output_base_path": {
             "type": "string",
@@ -54,7 +54,7 @@
           },
           "email_account": {
             "type": "string",
-            "description": "Outlook email account ID (e.g., 'test@gmail.com')"
+            "description": "Outlook email account ID (e.g., 'test@outlook.com')"
           },
           "search_unread_only": {
             "type": "boolean",
@@ -76,7 +76,7 @@
           },
           "email_account": {
             "type": "string",
-            "description": "Outlook email account ID (e.g., 'test@gmail.com')"
+            "description": "Outlook email account ID (e.g., 'test@outlook.com')"
           },
           "file_patterns": {
             "type": "array",

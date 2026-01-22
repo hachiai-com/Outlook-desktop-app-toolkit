@@ -121,7 +121,7 @@ python test_outlook_connection.py
 ✓ Successfully connected to Outlook
 
 Available email accounts:
-  - test@gmail.com
+  - test@outlook.com
   - another@example.com
 ```
 
@@ -233,7 +233,7 @@ You can override defaults in each JSON request:
   "capability": "find_and_extract_email",
   "args": {
     "subject": "Invoice",
-    "email_account": "test@gmail.com",
+    "email_account": "test@outlook.com",
     "output_base_path": "C:/MyOutput",           // Override default path
     "search_unread_only": false,                 // Override default search
     "send_reply_if_no_attachments": true,        // Override default reply

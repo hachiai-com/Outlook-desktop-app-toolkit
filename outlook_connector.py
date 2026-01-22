@@ -68,7 +68,7 @@ class OutlookConnector:
         Get inbox folder for specified email account
         
         Args:
-            email_account: Email account ID (e.g., "test@gmail.com")
+            email_account: Email account ID (e.g., "test@outlook.com")
             
         Returns:
             Tuple of (inbox, outlook) objects

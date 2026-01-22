@@ -35,7 +35,7 @@ You need to provide:
 
 **Example prompt for AI agent:**
 ```
-"Find the email with 'Invoice' in the subject from my Outlook account test@gmail.com and download all attachments"
+"Find the email with 'Invoice' in the subject from my Outlook account test@outlook.com and download all attachments"
 ```
 
 ### Use Case 2: "Get Email Content as Text File"
