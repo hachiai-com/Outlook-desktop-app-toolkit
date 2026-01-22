@@ -1,0 +1,74 @@
+{
+  "slug": "outlook-desktop-toolkit",
+  "display_name": "Outlook Desktop Toolkit",
+  "description": "A toolkit for connecting to Outlook desktop application to search emails by subject, extract email content and attachments, and send automated replies",
+  "version": "0.1.0",
+  "entrypoint": {
+    "type": "python",
+    "command": "python main.py"
+  },
+  "capabilities": [
+    {
+      "name": "find_and_extract_email",
+      "description": "Find the most recent email matching a subject (case-insensitive contains), extract its content to a text file, download all attachments to a structured folder, and optionally send an automated reply if no attachments are found",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Email subject to search for (case-insensitive contains match)"
+          },
+          "email_account": {
+            "type": "string",
+            "description": "Outlook email account ID (e.g., 'test@gmail.com')"
+          },
+          "output_base_path": {
+            "type": "string",
+            "description": "Base directory path for output files (default: current working directory)"
+          },
+          "search_unread_only": {
+            "type": "boolean",
+            "description": "If true, search only unread emails (default: true)"
+          },
+          "send_reply_if_no_attachments": {
+            "type": "boolean",
+            "description": "If true, send automated reply email when no attachments are found (default: false)"
+          },
+          "reply_message": {
+            "type": "string",
+            "description": "Custom reply message template (default: 'Please provide the required attachments for: {subject}')"
+          }
+        },
+        "required": ["subject", "email_account"]
+      }
+    },
+    {
+      "name": "send_email_reply",
+      "description": "Send an email reply via Outlook desktop application",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "to_email": {
+            "type": "string",
+            "description": "Recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body content"
+          },
+          "email_account": {
+            "type": "string",
+            "description": "Optional email account to send from (uses default account if not specified)"
+          }
+        },
+        "required": ["to_email", "subject", "body"]
+      }
+    }
+  ],
+  "author": "Email Utility Project",
+  "tags": ["outlook", "email", "automation", "com-api", "windows"]
+}
