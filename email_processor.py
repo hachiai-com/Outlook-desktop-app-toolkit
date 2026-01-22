@@ -34,6 +34,9 @@ class EmailProcessor:
             
         Returns:
             Email object if found, None otherwise
+            
+        Note: COM must remain initialized while using the returned email object.
+        The caller is responsible for uninitializing COM after use.
         """
         try:
             self.connector.initialize_com()
@@ -60,6 +63,7 @@ class EmailProcessor:
                         email_subject = getattr(email, 'Subject', '')
                         if subject_lower in email_subject.lower():
                             self.logger.info(f"Found matching email: {email_subject}")
+                            # DO NOT uninitialize COM here - caller needs it active
                             return email
                 except Exception as e:
                     self.logger.warning(f"Error checking email: {str(e)}")
@@ -68,13 +72,18 @@ class EmailProcessor:
                 email = items.GetNext()
             
             self.logger.warning(f"No email found with subject containing: {subject}")
+            # Only uninitialize if no email found
+            self.connector.uninitialize_com()
             return None
             
         except Exception as e:
             self.logger.error(f"Error searching for email: {str(e)}")
+            # Uninitialize on error
+            try:
+                self.connector.uninitialize_com()
+            except:
+                pass
             raise
-        finally:
-            self.connector.uninitialize_com()
     
     def extract_email_content(self, email: object) -> Dict[str, str]:
         """
@@ -226,7 +235,7 @@ class EmailProcessor:
             if output_base_path is None:
                 output_base_path = self.config.DEFAULT_OUTPUT_BASE_PATH
             
-            # Find email
+            # Find email (COM will be initialized and remain active)
             email = self.find_email_by_subject(subject, email_account, search_unread_only)
             
             if email is None:
@@ -235,47 +244,57 @@ class EmailProcessor:
                     "error": f"No email found with subject containing: {subject}"
                 }
             
-            # Extract email content
-            email_data = self.extract_email_content(email)
-            
-            # Create folder structure
-            email_folder_name = self.config.create_email_folder_name(
-                email_data['subject']
-            )
-            base_extraction_path = Path(output_base_path) / "email_extractions"
-            email_folder = base_extraction_path / email_folder_name
-            email_folder.mkdir(parents=True, exist_ok=True)
-            
-            # Save email content
-            email_content_file = self.save_email_content(email_data, email_folder)
-            
-            # Download attachments
-            attachments_folder = email_folder / "attachments"
-            attachments_info = self.download_attachments(email, attachments_folder)
-            
-            # Build result
-            result = {
-                "email_found": True,
-                "email_subject": email_data['subject'],
-                "email_sender": email_data['sender_name'],
-                "email_sender_address": email_data['sender_email'],
-                "email_sent_time": email_data['sent_on'],
-                "email_received_time": email_data['received_time'],
-                "has_attachments": len(attachments_info) > 0,
-                "attachment_count": len(attachments_info),
-                "output_folder": str(email_folder),
-                "email_content_file": email_content_file,
-                "attachments_folder": str(attachments_folder),
-                "attachments": attachments_info,
-                "reply_sent": False  # Will be set by email_sender if reply is sent
-            }
-            
-            self.logger.info(f"Successfully processed email: {email_data['subject']}")
-            return result
+            try:
+                # Extract email content (COM still active)
+                email_data = self.extract_email_content(email)
+                
+                # Create folder structure
+                email_folder_name = self.config.create_email_folder_name(
+                    email_data['subject']
+                )
+                base_extraction_path = Path(output_base_path) / "email_extractions"
+                email_folder = base_extraction_path / email_folder_name
+                email_folder.mkdir(parents=True, exist_ok=True)
+                
+                # Save email content
+                email_content_file = self.save_email_content(email_data, email_folder)
+                
+                # Download attachments (COM still active)
+                attachments_folder = email_folder / "attachments"
+                attachments_info = self.download_attachments(email, attachments_folder)
+                
+                # Build result
+                result = {
+                    "email_found": True,
+                    "email_subject": email_data['subject'],
+                    "email_sender": email_data['sender_name'],
+                    "email_sender_address": email_data['sender_email'],
+                    "email_sent_time": email_data['sent_on'],
+                    "email_received_time": email_data['received_time'],
+                    "has_attachments": len(attachments_info) > 0,
+                    "attachment_count": len(attachments_info),
+                    "output_folder": str(email_folder),
+                    "email_content_file": email_content_file,
+                    "attachments_folder": str(attachments_folder),
+                    "attachments": attachments_info,
+                    "reply_sent": False  # Will be set by email_sender if reply is sent
+                }
+                
+                self.logger.info(f"Successfully processed email: {email_data['subject']}")
+                return result
+                
+            finally:
+                # Uninitialize COM after all operations complete
+                self.connector.uninitialize_com()
             
         except Exception as e:
             error_msg = f"Error processing email: {str(e)}"
             self.logger.error(error_msg)
+            # Ensure COM is cleaned up on error
+            try:
+                self.connector.uninitialize_com()
+            except:
+                pass
             return {
                 "email_found": False,
                 "error": error_msg
@@ -299,7 +318,7 @@ class EmailProcessor:
             Dictionary with attachment check results
         """
         try:
-            # Find email
+            # Find email (COM will be initialized and remain active)
             email = self.find_email_by_subject(subject, email_account, search_unread_only)
             
             if email is None:
@@ -308,40 +327,50 @@ class EmailProcessor:
                     "error": f"No email found with subject containing: {subject}"
                 }
             
-            # Extract email metadata
-            email_data = self.extract_email_content(email)
-            
-            # Check attachments
-            attachment_count = email.Attachments.Count
-            has_attachments = attachment_count > 0
-            
-            # Get attachment list
-            attachments_list = []
-            if has_attachments:
-                for i in range(1, attachment_count + 1):  # Outlook is 1-indexed
-                    try:
-                        attachment = email.Attachments.Item(i)
-                        attachments_list.append({
-                            "filename": attachment.FileName,
-                            "size_bytes": getattr(attachment, 'Size', 0)
-                        })
-                    except Exception as e:
-                        self.logger.warning(f"Error getting attachment {i} info: {str(e)}")
-                        continue
-            
-            return {
-                "email_found": True,
-                "email_subject": email_data['subject'],
-                "email_sender": email_data['sender_name'],
-                "email_sent_time": email_data['sent_on'],
-                "has_attachments": has_attachments,
-                "attachment_count": attachment_count,
-                "attachments": attachments_list
-            }
+            try:
+                # Extract email metadata (COM still active)
+                email_data = self.extract_email_content(email)
+                
+                # Check attachments (COM still active)
+                attachment_count = email.Attachments.Count
+                has_attachments = attachment_count > 0
+                
+                # Get attachment list
+                attachments_list = []
+                if has_attachments:
+                    for i in range(1, attachment_count + 1):  # Outlook is 1-indexed
+                        try:
+                            attachment = email.Attachments.Item(i)
+                            attachments_list.append({
+                                "filename": attachment.FileName,
+                                "size_bytes": getattr(attachment, 'Size', 0)
+                            })
+                        except Exception as e:
+                            self.logger.warning(f"Error getting attachment {i} info: {str(e)}")
+                            continue
+                
+                return {
+                    "email_found": True,
+                    "email_subject": email_data['subject'],
+                    "email_sender": email_data['sender_name'],
+                    "email_sent_time": email_data['sent_on'],
+                    "has_attachments": has_attachments,
+                    "attachment_count": attachment_count,
+                    "attachments": attachments_list
+                }
+                
+            finally:
+                # Uninitialize COM after all operations complete
+                self.connector.uninitialize_com()
             
         except Exception as e:
             error_msg = f"Error checking email attachments: {str(e)}"
             self.logger.error(error_msg)
+            # Ensure COM is cleaned up on error
+            try:
+                self.connector.uninitialize_com()
+            except:
+                pass
             return {
                 "email_found": False,
                 "error": error_msg
@@ -367,7 +396,7 @@ class EmailProcessor:
             Dictionary with file pattern check results
         """
         try:
-            # Find email
+            # Find email (COM will be initialized and remain active)
             email = self.find_email_by_subject(subject, email_account, search_unread_only)
             
             if email is None:
@@ -376,72 +405,82 @@ class EmailProcessor:
                     "error": f"No email found with subject containing: {subject}"
                 }
             
-            # Extract email metadata
-            email_data = self.extract_email_content(email)
-            
-            # Check attachments
-            attachment_count = email.Attachments.Count
-            has_attachments = attachment_count > 0
-            
-            # Get all attachment filenames
-            attachment_filenames = []
-            if has_attachments:
-                for i in range(1, attachment_count + 1):  # Outlook is 1-indexed
-                    try:
-                        attachment = email.Attachments.Item(i)
-                        attachment_filenames.append(attachment.FileName)
-                    except Exception as e:
-                        self.logger.warning(f"Error getting attachment {i} info: {str(e)}")
-                        continue
-            
-            # Check which patterns are found
-            found_patterns = []
-            missing_patterns = []
-            pattern_details = {}
-            
-            for pattern in file_patterns:
-                pattern_lower = pattern.lower()
-                found = False
-                matching_files = []
+            try:
+                # Extract email metadata (COM still active)
+                email_data = self.extract_email_content(email)
                 
-                # Check if pattern matches any attachment filename
-                for filename in attachment_filenames:
-                    filename_lower = filename.lower()
-                    if pattern_lower in filename_lower:
-                        found = True
-                        matching_files.append(filename)
+                # Check attachments (COM still active)
+                attachment_count = email.Attachments.Count
+                has_attachments = attachment_count > 0
                 
-                if found:
-                    found_patterns.append(pattern)
-                    pattern_details[pattern] = {
-                        "found": True,
-                        "matching_files": matching_files
-                    }
-                else:
-                    missing_patterns.append(pattern)
-                    pattern_details[pattern] = {
-                        "found": False,
-                        "matching_files": []
-                    }
-            
-            return {
-                "email_found": True,
-                "email_subject": email_data['subject'],
-                "email_sender": email_data['sender_name'],
-                "email_sent_time": email_data['sent_on'],
-                "has_attachments": has_attachments,
-                "attachment_count": attachment_count,
-                "all_attachments": attachment_filenames,
-                "patterns_searched": file_patterns,
-                "found_patterns": found_patterns,
-                "missing_patterns": missing_patterns,
-                "pattern_details": pattern_details,
-                "all_patterns_found": len(missing_patterns) == 0
-            }
+                # Get all attachment filenames
+                attachment_filenames = []
+                if has_attachments:
+                    for i in range(1, attachment_count + 1):  # Outlook is 1-indexed
+                        try:
+                            attachment = email.Attachments.Item(i)
+                            attachment_filenames.append(attachment.FileName)
+                        except Exception as e:
+                            self.logger.warning(f"Error getting attachment {i} info: {str(e)}")
+                            continue
+                
+                # Check which patterns are found
+                found_patterns = []
+                missing_patterns = []
+                pattern_details = {}
+                
+                for pattern in file_patterns:
+                    pattern_lower = pattern.lower()
+                    found = False
+                    matching_files = []
+                    
+                    # Check if pattern matches any attachment filename
+                    for filename in attachment_filenames:
+                        filename_lower = filename.lower()
+                        if pattern_lower in filename_lower:
+                            found = True
+                            matching_files.append(filename)
+                    
+                    if found:
+                        found_patterns.append(pattern)
+                        pattern_details[pattern] = {
+                            "found": True,
+                            "matching_files": matching_files
+                        }
+                    else:
+                        missing_patterns.append(pattern)
+                        pattern_details[pattern] = {
+                            "found": False,
+                            "matching_files": []
+                        }
+                
+                return {
+                    "email_found": True,
+                    "email_subject": email_data['subject'],
+                    "email_sender": email_data['sender_name'],
+                    "email_sent_time": email_data['sent_on'],
+                    "has_attachments": has_attachments,
+                    "attachment_count": attachment_count,
+                    "all_attachments": attachment_filenames,
+                    "patterns_searched": file_patterns,
+                    "found_patterns": found_patterns,
+                    "missing_patterns": missing_patterns,
+                    "pattern_details": pattern_details,
+                    "all_patterns_found": len(missing_patterns) == 0
+                }
+                
+            finally:
+                # Uninitialize COM after all operations complete
+                self.connector.uninitialize_com()
             
         except Exception as e:
             error_msg = f"Error checking specific files: {str(e)}"
             self.logger.error(error_msg)
+            # Ensure COM is cleaned up on error
+            try:
+                self.connector.uninitialize_com()
+            except:
+                pass
             return {
                 "email_found": False,
                 "error": error_msg

@@ -234,7 +234,7 @@ Examples:
             "subject": "Test",
             "email_account": email_account
         },
-        should_succeed=False  # May not find email, but should connect
+        should_succeed=True  # Connection test should succeed if connection works
     )
     
     # Test 2: Check Email Attachments

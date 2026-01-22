@@ -70,6 +70,7 @@ def find_and_extract_email(args: Dict[str, Any]) -> Dict[str, Any]:
         
         # Handle case when no attachments and reply is requested
         if not result.get("has_attachments", False) and send_reply_if_no_attachments:
+            connector = None
             try:
                 # Get the original email to send reply
                 connector = OutlookConnector()
@@ -98,14 +99,36 @@ def find_and_extract_email(args: Dict[str, Any]) -> Dict[str, Any]:
                         pass
                     email = items.GetNext()
                 
-                connector.uninitialize_com()
-                
-                # Send reply if email found
+                # Send reply if email found (extract properties while COM is active)
                 if original_email:
+                    # Extract email properties while COM is still active
+                    sender_email = getattr(original_email, 'SenderEmailAddress', None)
+                    if not sender_email:
+                        sender_email = getattr(original_email, 'Sender', None)
+                        if hasattr(sender_email, 'Address'):
+                            sender_email = sender_email.Address
+                    
+                    original_subject = getattr(original_email, 'Subject', 'Your email')
+                    
+                    # Now uninitialize COM - we have all the data we need
+                    connector.uninitialize_com()
+                    connector = None
+                    
+                    # Send reply using extracted data
                     sender = EmailSender()
-                    reply_result = sender.send_attachment_request_reply(
-                        original_email=original_email,
-                        reply_message=reply_message,
+                    reply_subject = f"Re: {original_subject}"
+                    
+                    if reply_message is None:
+                        from config import ToolkitConfig
+                        config = ToolkitConfig()
+                        reply_message = config.DEFAULT_REPLY_MESSAGE.format(
+                            subject=original_subject
+                        )
+                    
+                    reply_result = sender.send_reply(
+                        to_email=sender_email,
+                        subject=reply_subject,
+                        body=reply_message,
                         email_account=email_account
                     )
                     
@@ -113,12 +136,19 @@ def find_and_extract_email(args: Dict[str, Any]) -> Dict[str, Any]:
                     if not reply_result.get("success", False):
                         result["reply_error"] = reply_result.get("error", "Unknown error")
                 else:
+                    if connector:
+                        connector.uninitialize_com()
                     logger.warning("Could not find email object to send reply")
                     result["reply_sent"] = False
                     result["reply_error"] = "Could not find email object for reply"
                     
             except Exception as e:
                 logger.error(f"Error sending reply: {str(e)}")
+                if connector:
+                    try:
+                        connector.uninitialize_com()
+                    except:
+                        pass
                 result["reply_sent"] = False
                 result["reply_error"] = str(e)
         
