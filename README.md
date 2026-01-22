@@ -64,8 +64,13 @@ or
 
 Finds the most recent email matching a subject, extracts content, and downloads attachments.
 
+**How "Most Recent" Works:**
+- Emails are sorted by `ReceivedTime` in descending order (newest first)
+- The first email with a subject containing the search term is returned
+- If multiple emails match, you get the one with the latest received time
+
 **Required Parameters:**
-- `subject` - Email subject to search for (case-insensitive)
+- `subject` - Email subject to search for (case-insensitive substring match)
 - `email_account` - Your Outlook email account (e.g., "your.email@example.com")
 
 **Optional Parameters:**
@@ -114,8 +119,10 @@ Finds the most recent email matching a subject, extracts content, and downloads 
 
 Checks if an email has any attachments without downloading them.
 
+**Note:** Uses the same search logic as Capability 1 - finds the most recent email matching the subject (sorted by `ReceivedTime` descending).
+
 **Required Parameters:**
-- `subject` - Email subject to search for
+- `subject` - Email subject to search for (case-insensitive substring match)
 - `email_account` - Your Outlook email account
 
 **Optional Parameters:**
@@ -160,8 +167,10 @@ Checks if an email has any attachments without downloading them.
 
 Checks if an email contains specific file patterns in its attachments.
 
+**Note:** Uses the same search logic as Capability 1 - finds the most recent email matching the subject (sorted by `ReceivedTime` descending).
+
 **Required Parameters:**
-- `subject` - Email subject to search for
+- `subject` - Email subject to search for (case-insensitive substring match)
 - `email_account` - Your Outlook email account
 - `file_patterns` - List of file name patterns to search for (e.g., `["invoice", "receipt", "contract"]`)
 
@@ -425,28 +434,43 @@ Common errors:
 
 ## Testing
 
+For comprehensive testing instructions, see **[TESTING.md](TESTING.md)**.
+
+### Quick Test
+
 Test the toolkit locally:
 
 ```bash
-# Test finding email
-echo '{"capability": "find_and_extract_email", "args": {"subject": "Test", "email_account": "your.email@example.com"}}' | python main.py
+# Find your email account ID first
+python find_account_id.py
 
-# Test sending reply
-echo '{"capability": "send_email_reply", "args": {"to_email": "test@example.com", "subject": "Test", "body": "Test message"}}' | python main.py
+# Run automated test suite
+python test_toolkit.py
+
+# Or test manually
+echo '{"capability": "find_and_extract_email", "args": {"subject": "Test", "email_account": "your.email@example.com"}}' | python main.py
 ```
+
+### Helper Scripts
+
+- **`find_account_id.py`** - Discover your Outlook email account IDs
+- **`test_toolkit.py`** - Automated test suite for all capabilities
 
 ## Documentation
 
 - **[SETUP.md](SETUP.md)** - Detailed setup and configuration guide
+- **[TESTING.md](TESTING.md)** - Comprehensive testing guide and procedures
+- **[agent_detail.md](agent_detail.md)** - Guide for AI agents using this toolkit
 - **toolkit.json** - Toolkit metadata and capability schemas
 
 ## Important Notes
 
 - **Windows only** - Requires Windows and Outlook desktop app
 - **Outlook must be running** - The toolkit connects to running Outlook
-- **Case-insensitive search** - Subject search matches any case
-- **Most recent first** - Returns the newest matching email
+- **Case-insensitive search** - Subject search matches any case (substring match)
+- **Most recent first** - Returns the newest matching email based on `ReceivedTime` (sorted descending)
 - **Inbox only** - Searches only the Inbox folder (not subfolders)
+- **Search behavior** - All subject-based searches sort emails by received time and return the first match
 
 ## Support
 

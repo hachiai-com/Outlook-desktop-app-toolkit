@@ -22,6 +22,13 @@ You need to provide:
 - **Which account**: Your Outlook email account ID
 - **Where to save**: Output directory (optional)
 
+### How Email Search Works
+
+- **Case-insensitive**: Searches match regardless of letter case
+- **Substring match**: Finds emails where the subject contains your search term
+- **Most recent first**: If multiple emails match, returns the one received most recently (sorted by `ReceivedTime`)
+- **Search scope**: Can search only unread emails (default) or all emails
+
 ## Common Use Cases
 
 ### Use Case 1: "Find and Download Email Attachments"
