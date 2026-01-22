@@ -7,6 +7,8 @@ A Python toolkit that connects to Microsoft Outlook desktop application to searc
 - **Find emails** by subject (searches your Outlook inbox)
 - **Extract email content** and save to text file
 - **Download attachments** to organized folders
+- **Check if email has attachments** without downloading
+- **Check for specific file patterns** in attachments
 - **Send automated replies** when attachments are missing (optional)
 
 ## Quick Start
@@ -108,7 +110,114 @@ Finds the most recent email matching a subject, extracts content, and downloads 
 }
 ```
 
-### Capability 2: Send Email Reply
+### Capability 2: Check Email Attachments
+
+Checks if an email has any attachments without downloading them.
+
+**Required Parameters:**
+- `subject` - Email subject to search for
+- `email_account` - Your Outlook email account
+
+**Optional Parameters:**
+- `search_unread_only` - Search only unread emails (default: true)
+
+**Example:**
+```json
+{
+  "capability": "check_email_attachments",
+  "args": {
+    "subject": "Invoice",
+    "email_account": "test@gmail.com"
+  }
+}
+```
+
+**Success Response:**
+```json
+{
+  "result": {
+    "email_found": true,
+    "email_subject": "Invoice #12345",
+    "email_sender": "John Doe",
+    "has_attachments": true,
+    "attachment_count": 2,
+    "attachments": [
+      {
+        "filename": "invoice.pdf",
+        "size_bytes": 123456
+      },
+      {
+        "filename": "receipt.pdf",
+        "size_bytes": 78901
+      }
+    ]
+  },
+  "capability": "check_email_attachments"
+}
+```
+
+### Capability 3: Check Specific Files
+
+Checks if an email contains specific file patterns in its attachments.
+
+**Required Parameters:**
+- `subject` - Email subject to search for
+- `email_account` - Your Outlook email account
+- `file_patterns` - List of file name patterns to search for (e.g., `["invoice", "receipt", "contract"]`)
+
+**Optional Parameters:**
+- `search_unread_only` - Search only unread emails (default: true)
+
+**Example:**
+```json
+{
+  "capability": "check_specific_files",
+  "args": {
+    "subject": "Invoice",
+    "email_account": "test@gmail.com",
+    "file_patterns": ["invoice", "receipt", "contract", "statement"]
+  }
+}
+```
+
+**Success Response:**
+```json
+{
+  "result": {
+    "email_found": true,
+    "email_subject": "Invoice #12345",
+    "email_sender": "John Doe",
+    "has_attachments": true,
+    "attachment_count": 3,
+    "all_attachments": ["invoice.pdf", "receipt.pdf", "notes.txt"],
+    "patterns_searched": ["invoice", "receipt", "contract", "statement"],
+    "found_patterns": ["invoice", "receipt"],
+    "missing_patterns": ["contract", "statement"],
+    "pattern_details": {
+      "invoice": {
+        "found": true,
+        "matching_files": ["invoice.pdf"]
+      },
+      "receipt": {
+        "found": true,
+        "matching_files": ["receipt.pdf"]
+      },
+      "contract": {
+        "found": false,
+        "matching_files": []
+      },
+      "statement": {
+        "found": false,
+        "matching_files": []
+      }
+    },
+    "all_patterns_found": false
+  },
+  "capability": "check_specific_files"
+}
+```
+
+### Capability 4: Send Email Reply
 
 Sends an email reply via Outlook.
 
@@ -233,7 +342,40 @@ Here are example prompts users might use when calling this toolkit through an AI
 }
 ```
 
-### Example 5: Search All Emails (Including Read)
+### Example 5: Check if Email Has Attachments
+```
+"Check if the email with 'Invoice' in the subject has any attachments"
+```
+
+**Agent would call:**
+```json
+{
+  "capability": "check_email_attachments",
+  "args": {
+    "subject": "Invoice",
+    "email_account": "test@gmail.com"
+  }
+}
+```
+
+### Example 6: Check for Specific File Types
+```
+"Check if the email about 'Report' has files containing 'invoice', 'receipt', 'contract', or 'statement' in their names"
+```
+
+**Agent would call:**
+```json
+{
+  "capability": "check_specific_files",
+  "args": {
+    "subject": "Report",
+    "email_account": "test@gmail.com",
+    "file_patterns": ["invoice", "receipt", "contract", "statement"]
+  }
+}
+```
+
+### Example 7: Search All Emails (Including Read)
 ```
 "Find any email (read or unread) with 'Contract' in the subject and extract everything"
 ```

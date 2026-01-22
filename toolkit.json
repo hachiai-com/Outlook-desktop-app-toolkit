@@ -43,6 +43,57 @@
       }
     },
     {
+      "name": "check_email_attachments",
+      "description": "Check if an email has any attachments without downloading them",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Email subject to search for (case-insensitive contains match)"
+          },
+          "email_account": {
+            "type": "string",
+            "description": "Outlook email account ID (e.g., 'test@gmail.com')"
+          },
+          "search_unread_only": {
+            "type": "boolean",
+            "description": "If true, search only unread emails (default: true)"
+          }
+        },
+        "required": ["subject", "email_account"]
+      }
+    },
+    {
+      "name": "check_specific_files",
+      "description": "Check if an email contains specific file patterns in its attachments",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Email subject to search for (case-insensitive contains match)"
+          },
+          "email_account": {
+            "type": "string",
+            "description": "Outlook email account ID (e.g., 'test@gmail.com')"
+          },
+          "file_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of file name patterns to search for in attachments (case-insensitive contains match)"
+          },
+          "search_unread_only": {
+            "type": "boolean",
+            "description": "If true, search only unread emails (default: true)"
+          }
+        },
+        "required": ["subject", "email_account", "file_patterns"]
+      }
+    },
+    {
       "name": "send_email_reply",
       "description": "Send an email reply via Outlook desktop application",
       "schema": {

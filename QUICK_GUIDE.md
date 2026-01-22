@@ -66,7 +66,36 @@ You need to provide:
 "Look for an email with 'Report' in the subject. If it has no attachments, send a reply asking for the files"
 ```
 
-### Use Case 4: "Send a Reply Email"
+### Use Case 4: "Check if Email Has Attachments"
+
+**What you want:** Check if an email has attachments without downloading them
+
+**What to provide:**
+- Subject to search for
+- Your email account
+
+**Example prompt:**
+```
+"Check if the email with 'Invoice' in the subject has any attachments"
+```
+
+### Use Case 5: "Check for Specific File Types"
+
+**What you want:** Check if an email contains specific file patterns in attachments
+
+**What to provide:**
+- Subject to search for
+- Your email account
+- List of file patterns to search for (e.g., "invoice", "receipt", "contract", "statement")
+
+**Example prompt:**
+```
+"Check if the email about 'Report' has files with 'invoice', 'receipt', 'contract', or 'statement' in their names"
+```
+
+**Note:** The search is case-insensitive and looks for the pattern anywhere in the filename. For example, "invoice" will match "invoice.pdf", "monthly_invoice.xlsx", "Invoice_2025.pdf", etc.
+
+### Use Case 6: "Send a Reply Email"
 
 **What you want:** Send an email reply
 

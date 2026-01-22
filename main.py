@@ -135,6 +135,140 @@ def find_and_extract_email(args: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 
+def check_email_attachments(args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Check if email has any attachments
+    
+    Args:
+        args: Dictionary with capability arguments
+        
+    Returns:
+        Dictionary with result or error
+    """
+    try:
+        # Validate required parameters
+        subject = args.get("subject")
+        email_account = args.get("email_account")
+        
+        if not subject:
+            return {
+                "error": "Missing required parameter: subject",
+                "capability": "check_email_attachments"
+            }
+        
+        if not email_account:
+            return {
+                "error": "Missing required parameter: email_account",
+                "capability": "check_email_attachments"
+            }
+        
+        # Get optional parameters
+        search_unread_only = args.get("search_unread_only", True)
+        
+        # Check attachments
+        processor = EmailProcessor()
+        result = processor.check_email_attachments(
+            subject=subject,
+            email_account=email_account,
+            search_unread_only=search_unread_only
+        )
+        
+        if not result.get("email_found", False):
+            return {
+                "error": result.get("error", "Email not found"),
+                "capability": "check_email_attachments"
+            }
+        
+        return {
+            "result": result,
+            "capability": "check_email_attachments"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in check_email_attachments: {str(e)}")
+        return {
+            "error": str(e),
+            "capability": "check_email_attachments"
+        }
+
+
+def check_specific_files(args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Check if email has specific file patterns in attachments
+    
+    Args:
+        args: Dictionary with capability arguments
+        
+    Returns:
+        Dictionary with result or error
+    """
+    try:
+        # Validate required parameters
+        subject = args.get("subject")
+        email_account = args.get("email_account")
+        file_patterns = args.get("file_patterns")
+        
+        if not subject:
+            return {
+                "error": "Missing required parameter: subject",
+                "capability": "check_specific_files"
+            }
+        
+        if not email_account:
+            return {
+                "error": "Missing required parameter: email_account",
+                "capability": "check_specific_files"
+            }
+        
+        if not file_patterns:
+            return {
+                "error": "Missing required parameter: file_patterns",
+                "capability": "check_specific_files"
+            }
+        
+        if not isinstance(file_patterns, list):
+            return {
+                "error": "file_patterns must be a list of strings",
+                "capability": "check_specific_files"
+            }
+        
+        if len(file_patterns) == 0:
+            return {
+                "error": "file_patterns list cannot be empty",
+                "capability": "check_specific_files"
+            }
+        
+        # Get optional parameters
+        search_unread_only = args.get("search_unread_only", True)
+        
+        # Check specific files
+        processor = EmailProcessor()
+        result = processor.check_specific_files(
+            subject=subject,
+            email_account=email_account,
+            file_patterns=file_patterns,
+            search_unread_only=search_unread_only
+        )
+        
+        if not result.get("email_found", False):
+            return {
+                "error": result.get("error", "Email not found"),
+                "capability": "check_specific_files"
+            }
+        
+        return {
+            "result": result,
+            "capability": "check_specific_files"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in check_specific_files: {str(e)}")
+        return {
+            "error": str(e),
+            "capability": "check_specific_files"
+        }
+
+
 def send_email_reply(args: Dict[str, Any]) -> Dict[str, Any]:
     """
     Send email reply
@@ -219,6 +353,14 @@ def main():
         # Route to appropriate capability
         if capability == "find_and_extract_email":
             result = find_and_extract_email(args)
+            print(json.dumps(result, indent=2))
+        
+        elif capability == "check_email_attachments":
+            result = check_email_attachments(args)
+            print(json.dumps(result, indent=2))
+        
+        elif capability == "check_specific_files":
+            result = check_specific_files(args)
             print(json.dumps(result, indent=2))
         
         elif capability == "send_email_reply":

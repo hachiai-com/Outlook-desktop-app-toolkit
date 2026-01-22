@@ -280,3 +280,169 @@ class EmailProcessor:
                 "email_found": False,
                 "error": error_msg
             }
+    
+    def check_email_attachments(
+        self,
+        subject: str,
+        email_account: str,
+        search_unread_only: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Check if email has any attachments
+        
+        Args:
+            subject: Email subject to search for
+            email_account: Outlook email account ID
+            search_unread_only: If True, search only unread emails
+            
+        Returns:
+            Dictionary with attachment check results
+        """
+        try:
+            # Find email
+            email = self.find_email_by_subject(subject, email_account, search_unread_only)
+            
+            if email is None:
+                return {
+                    "email_found": False,
+                    "error": f"No email found with subject containing: {subject}"
+                }
+            
+            # Extract email metadata
+            email_data = self.extract_email_content(email)
+            
+            # Check attachments
+            attachment_count = email.Attachments.Count
+            has_attachments = attachment_count > 0
+            
+            # Get attachment list
+            attachments_list = []
+            if has_attachments:
+                for i in range(1, attachment_count + 1):  # Outlook is 1-indexed
+                    try:
+                        attachment = email.Attachments.Item(i)
+                        attachments_list.append({
+                            "filename": attachment.FileName,
+                            "size_bytes": getattr(attachment, 'Size', 0)
+                        })
+                    except Exception as e:
+                        self.logger.warning(f"Error getting attachment {i} info: {str(e)}")
+                        continue
+            
+            return {
+                "email_found": True,
+                "email_subject": email_data['subject'],
+                "email_sender": email_data['sender_name'],
+                "email_sent_time": email_data['sent_on'],
+                "has_attachments": has_attachments,
+                "attachment_count": attachment_count,
+                "attachments": attachments_list
+            }
+            
+        except Exception as e:
+            error_msg = f"Error checking email attachments: {str(e)}"
+            self.logger.error(error_msg)
+            return {
+                "email_found": False,
+                "error": error_msg
+            }
+    
+    def check_specific_files(
+        self,
+        subject: str,
+        email_account: str,
+        file_patterns: List[str],
+        search_unread_only: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Check if email has specific file patterns in attachments
+        
+        Args:
+            subject: Email subject to search for
+            email_account: Outlook email account ID
+            file_patterns: List of file name patterns to search for (case-insensitive)
+            search_unread_only: If True, search only unread emails
+            
+        Returns:
+            Dictionary with file pattern check results
+        """
+        try:
+            # Find email
+            email = self.find_email_by_subject(subject, email_account, search_unread_only)
+            
+            if email is None:
+                return {
+                    "email_found": False,
+                    "error": f"No email found with subject containing: {subject}"
+                }
+            
+            # Extract email metadata
+            email_data = self.extract_email_content(email)
+            
+            # Check attachments
+            attachment_count = email.Attachments.Count
+            has_attachments = attachment_count > 0
+            
+            # Get all attachment filenames
+            attachment_filenames = []
+            if has_attachments:
+                for i in range(1, attachment_count + 1):  # Outlook is 1-indexed
+                    try:
+                        attachment = email.Attachments.Item(i)
+                        attachment_filenames.append(attachment.FileName)
+                    except Exception as e:
+                        self.logger.warning(f"Error getting attachment {i} info: {str(e)}")
+                        continue
+            
+            # Check which patterns are found
+            found_patterns = []
+            missing_patterns = []
+            pattern_details = {}
+            
+            for pattern in file_patterns:
+                pattern_lower = pattern.lower()
+                found = False
+                matching_files = []
+                
+                # Check if pattern matches any attachment filename
+                for filename in attachment_filenames:
+                    filename_lower = filename.lower()
+                    if pattern_lower in filename_lower:
+                        found = True
+                        matching_files.append(filename)
+                
+                if found:
+                    found_patterns.append(pattern)
+                    pattern_details[pattern] = {
+                        "found": True,
+                        "matching_files": matching_files
+                    }
+                else:
+                    missing_patterns.append(pattern)
+                    pattern_details[pattern] = {
+                        "found": False,
+                        "matching_files": []
+                    }
+            
+            return {
+                "email_found": True,
+                "email_subject": email_data['subject'],
+                "email_sender": email_data['sender_name'],
+                "email_sent_time": email_data['sent_on'],
+                "has_attachments": has_attachments,
+                "attachment_count": attachment_count,
+                "all_attachments": attachment_filenames,
+                "patterns_searched": file_patterns,
+                "found_patterns": found_patterns,
+                "missing_patterns": missing_patterns,
+                "pattern_details": pattern_details,
+                "all_patterns_found": len(missing_patterns) == 0
+            }
+            
+        except Exception as e:
+            error_msg = f"Error checking specific files: {str(e)}"
+            self.logger.error(error_msg)
+            return {
+                "email_found": False,
+                "error": error_msg
+            }
